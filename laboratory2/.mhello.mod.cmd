@@ -1,0 +1,1 @@
+savedcmd_/home/maksanik/projects/laboratory2/mhello.mod := printf '%s\n'   mhello.o | awk '!x[$$0]++ { print("/home/maksanik/projects/laboratory2/"$$0) }' > /home/maksanik/projects/laboratory2/mhello.mod
