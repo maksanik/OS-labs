@@ -3,54 +3,58 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <pthread.h>
 
 void* thread_function(void* arg) {
-time_t now;
-time(&now);
-printf("Поток id: %lu, родительский pid: %d, время: %s", pthread_self(), getpid(), ctime(&now));
-return NULL;
+    time_t now;
+    time(&now);
+    struct tm *local = localtime(&now);
+    printf("Поток id: %lu, родительский pid: %d, время: %02d:%02d:%02d\n", pthread_self(), getpid(), local->tm_hour, local->tm_min, local->tm_sec);
 }
 
 int main() {
-pid_t pid1, pid2;
-time_t now;
+    pid_t pid1, pid2;
+    time_t now;
+    int status;
 
-printf("Родительский процесс pid: %d\n", getpid());
+    printf("Родительский процесс pid: %d\n", getpid());
+    pid1 = fork();
+    wait(&status);
 
-pid1 = fork();
-if (pid1 == 0) {
-// Первый дочерний процесс
-time(&now);
-printf("Первый дочерний процесс pid: %d, родительский pid: %d, время: %s", getpid(), getppid(), ctime(&now));
-printf("Информация о портах и соединениях:\n");
-//system("netstat -tuln"); // Вызов system для вывода информации о портах и соединениях
-} else if (pid1 > 0) {
-pid2 = fork();
-if (pid2 == 0) {
-// Второй дочерний процесс
-time(&now);
-printf("Второй дочерний процесс pid: %d, родительский pid: %d, время: %s", getpid(), getppid(), ctime(&now));
+    if (pid1 == 0) { // Первый дочерний процесс
+        time(&now);
+        struct tm *local = localtime(&now);
+        printf("Первый дочерний процесс pid: %d, родительский pid: %d, время: %02d:%02d:%02d\n", getpid(), getppid(),  local->tm_hour, local->tm_min, local->tm_sec);
+        printf("Информация о портах и соединениях:\n");
 
-// Создаём два потока
-pthread_t thread1, thread2;
-pthread_create(&thread1, NULL, thread_function, NULL);
-pthread_create(&thread2, NULL, thread_function, NULL);
+        system("ss -tuln"); // Вызов system для вывода информации о портах и соединениях
 
-// Ожидаем завершения потоков
-pthread_join(thread1, NULL);
-pthread_join(thread2, NULL);
-} else {
-// Родительский процесс
-time(&now);
-printf("Родительский процесс после fork() pid: %d, время: %s", getpid(), ctime(&now));
-//system("ps -x"); // Выполняем команду ps -x
-wait(NULL); // Ожидаем завершения дочерних процессов
-wait(NULL);
-}
-} else {
-printf("Ошибка вызова fork, потомок не создан\n");
-}
+    } else if (pid1 > 0) {
+        pid2 = fork();
+        wait(&status);
 
-return 0;
+        if (pid2 == 0) { // Второй дочерний процесс
+            time(&now);
+            struct tm *local = localtime(&now);
+            printf("Второй дочерний процесс pid: %d, родительский pid: %d, время: %02d:%02d:%02d\n", getpid(), getppid(), local->tm_hour, local->tm_min, local->tm_sec);
+
+            // Создаём два потока
+            pthread_t thread1, thread2;
+            pthread_create(&thread1, NULL, thread_function, NULL);
+            pthread_create(&thread2, NULL, thread_function, NULL);
+
+            // Ожидаем завершения потоков
+            pthread_join(thread1, NULL);
+            pthread_join(thread2, NULL);
+        } else {
+            // Родительский процесс
+            time(&now);
+            struct tm *local = localtime(&now);
+            printf("Родительский процесс после fork() pid: %d, время: %02d:%02d:%02d\n", getpid(), local->tm_hour, local->tm_min, local->tm_sec);
+
+            system("ps -x");
+        }
+    }
+    return 0;
 }
