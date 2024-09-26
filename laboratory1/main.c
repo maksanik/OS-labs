@@ -85,6 +85,6 @@ void get_additional_inf(void) {
     printf("Текущий каталог - %s\n", getcwd(cwd, 200));
 
     struct stat file_inf;
-    stat("/home/maksanik/projects/laboratory1/main.c", &file_inf);
+    stat("/home/maksanik/projects/OS-labs/laboratory1/main.c", &file_inf);
     printf("Размер исполняемого файла - %ld байт\n", file_inf.st_size);
 }

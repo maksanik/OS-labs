@@ -1,1 +1,1 @@
-savedcmd_/home/maksanik/projects/laboratory2/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/maksanik/projects/laboratory2/Module.symvers -T /home/maksanik/projects/laboratory2/modules.order -i Module.symvers -e 
+savedcmd_/home/maksanik/projects/OS-labs/laboratory2/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/maksanik/projects/OS-labs/laboratory2/Module.symvers -T /home/maksanik/projects/OS-labs/laboratory2/modules.order -i Module.symvers -e 
