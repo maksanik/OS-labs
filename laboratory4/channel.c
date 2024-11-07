@@ -232,25 +232,44 @@ int gaussMem(float augmented[MAX][MAX * 2], int n) {
 }
 
 int gaussSocket(float augmented[MAX][MAX * 2], int n) {
-    int sockfds[2];
-    pid_t pid;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t addr_len = sizeof(struct sockaddr_in);
+    int sock_fd, client_fd;
+    struct sockaddr_in server_addr;
     float temp;
 
-    // Создаем сокет
-    socketpair(AF_UNIX, SOCK_STREAM, 0, sockfds);
+    // Создание UNIX сокета
+    sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-    for (int i = 0; i < n; i++) {
+    server_addr.sin_family = AF_UNIX;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(8080);
+
+    // Привязка сокета к файлу
+    bind(sock_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+
+    // Ожидание подключения клиента
+    listen(sock_fd, n);
+
+    pid_t pid;
+    for (int i = 0; i < n; i++)
+    {
         pid = fork();
-        if (pid == 0) { // Дочерний процесс
+        if (pid == 0)
+        { // Дочерний процесс
+            // Подключение к серверу (родителю)
+            client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+            connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+
             // Если элемент на главной диагонали равен нулю, меняем строки
-            if (augmented[i][i] == 0) {
+            if (augmented[i][i] == 0)
+            {
                 int j;
-                for (j = i + 1; j < n; j++) {
-                    if (augmented[j][i] != 0) {
-                        // Меняем строки
-                        for (int k = 0; k < 2 * n; k++) {
+                for (j = i + 1; j < n; j++)
+                {
+                    if (augmented[j][i] != 0)
+                    {
+                        for (int k = 0; k < 2 * n; k++)
+                        {
                             temp = augmented[i][k];
                             augmented[i][k] = augmented[j][k];
                             augmented[j][k] = temp;
@@ -258,39 +277,57 @@ int gaussSocket(float augmented[MAX][MAX * 2], int n) {
                         break;
                     }
                 }
-                if (j == n) {
-                    return 1; // Матрица необратима
+                if (j == n)
+                {
+                    close(client_fd);
+                    exit(1); // Матрица необратима
                 }
             }
 
             // Нормализуем текущую строку
             temp = augmented[i][i];
-            for (int j = 0; j < 2 * n; j++) {
+            for (int j = 0; j < 2 * n; j++)
+            {
                 augmented[i][j] /= temp;
             }
 
             // Обнуляем элементы в столбце
-            for (int j = 0; j < n; j++) {
-                if (i != j) {
+            for (int j = 0; j < n; j++)
+            {
+                if (i != j)
+                {
                     temp = augmented[j][i];
-                    for (int k = 0; k < 2 * n; k++) {
+                    for (int k = 0; k < 2 * n; k++)
+                    {
                         augmented[j][k] -= augmented[i][k] * temp;
                     }
                 }
             }
 
-            // Отправляем данные через сокет
-            write(sockfds[1], augmented, sizeof(float) * MAX * 2 * n);
-            close(sockfds[1]);
+            // Отправляем данные родительскому процессу
+            write(client_fd, augmented, sizeof(float) * MAX * 2 * n);
+            close(client_fd);
             exit(0);
-        } else if (pid > 0) {
-            wait(NULL);
+        }
+        else if (pid > 0)
+        {
+            // Родительский процесс принимает данные от дочернего процесса
+            client_fd = accept(sock_fd, NULL, NULL);
+            if (client_fd == -1)
+            {
+                perror("accept failed");
+                close(sock_fd);
+                return -1;
+            }
 
-            // Читаем данные из сокета
-            read(sockfds[0], augmented, sizeof(float) * MAX * 2 * n);
-            close(sockfds[0]);
+            read(client_fd, augmented, sizeof(float) * MAX * 2 * n);
+            close(client_fd);
+            wait(NULL);
         }
     }
+
+    // Закрытие и удаление сокета
+    close(sock_fd);
 
     return 0;
 }
