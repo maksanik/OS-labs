@@ -6,7 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define MAX_MEMORY 10000 // Максимальное количество выделенной памяти
+#define MAX_MEMORY 100000 // Максимальное количество выделенной памяти
 
 // Глобальная переменная для хранения всех выделенных блоков памяти
 void *allocated_memory[MAX_MEMORY];
@@ -31,7 +31,7 @@ void handle_signal(int sig)
 // Функция для задержки от 100 до 1000 наносекунд
 void delay()
 {
-    struct timespec req = {0, (rand() % 901 + 100) * 1000}; // 100-1000 нс
+    struct timespec req = {0, (rand() % 901 + 100) * 10000}; // 100-1000 нс
     nanosleep(&req, NULL);
 }
 
@@ -46,7 +46,7 @@ void *mode1(void *arg)
         if (ptr != NULL)
         {
             allocated_memory[mem_index++] = ptr;
-            printf("Выделено %d блоков памяти\n", mem_index);
+            // printf("Выделено %d блоков памяти\n", mem_index);
         }
         pthread_mutex_unlock(&mem_mutex);
 
@@ -106,8 +106,8 @@ int main(int argc, char *argv[])
     // Устанавливаем обработчик сигнала
     signal(SIGINT, handle_signal); // Обрабатываем сигнал прерывания (Ctrl+C)
 
-    // pid_t pid = getpid();
-    // printf("PID текущего процесса: %d \n", pid);
+    pid_t pid = getpid();
+    printf("PID текущего процесса: %d \n", pid);
 
     // Инициализация случайного числа
     srand(time(NULL));

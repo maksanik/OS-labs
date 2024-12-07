@@ -1,0 +1,9 @@
+[Unit]
+Description=Memory maps bebra
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c "/home/maksanik/projects/laboratory5/second_bebr $(pgrep first_bebr) /home/maksanik/>
+Restart=always
+RestartSec=30s
+
